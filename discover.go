@@ -6,36 +6,32 @@ import (
 )
 
 type Route struct {
-	Host string
-	UrlC chan []url.URL
+	Host    string
+	URL     url.URL
+	SignalC chan int
 }
 
-var discoverC chan Route
+var discover struct {
+	C chan Route
+}
 
 func init() {
-	discoverC = make(chan Route)
-	addC := discoverNewHosts("http://127.0.0.1:4001/v2/keys/hosts")
-
-	go func() {
-		for {
-			host := <-addC
-			log.Println("addC:>", host)
-		}
-	}()
-
+	discover.C = discoverRoutesFromEtcD()
 }
 
-func discoverNewHosts(keyUrl string) chan string {
-	addC := make(chan string)
-	nodeC := longPollForJson(keyUrl)
+func discoverRoutesFromEtcD() chan Route {
+	routeC := make(chan Route)
+
+	respC, err := longPollForKeyChanges("/hosts")
+	if err != nil {
+		log.Println(err)
+	}
 
 	go func() {
 		for {
-			node := <-nodeC
-			log.Println(node)
-			addC <- node.Key
+			log.Println(<-respC)
 		}
 	}()
 
-	return addC
+	return routeC
 }

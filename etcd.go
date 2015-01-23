@@ -4,29 +4,46 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/robtuley/report"
 )
 
-type etcdNode struct {
-	Key           string
-	Value         string
-	Dir           bool
-	CreatedIndex  int
-	ModifiedIndex int
+type etcdResp struct {
+	Action  string   `json:"action"`
+	ErrCode int      `json:"errorCode"`
+	ErrMsg  string   `json:"Message"`
+	Node    etcdNode `json:"node"`
 }
 
-func longPollForJson(keyUrl string) chan etcdNode {
-	watchC := make(chan etcdNode)
+type etcdNode struct {
+	Key      string     `json:"key"`
+	Value    string     `json:"value"`
+	IsDir    bool       `json:"dir"`
+	Index    int        `json:"modifiedIndex"`
+	Children []etcdNode `json:"nodes"`
+}
+
+func longPollForKeyChanges(key string) (chan etcdResp, error) {
+	watchC := make(chan etcdResp)
+
+	keyUrl, err := url.Parse("http://127.0.0.1:4001/v2/keys/" + key)
+	if err != nil {
+		report.Action("etcd.url.error", report.Data{"key": key})
+		return nil, err
+	}
+	params := url.Values{}
+	//params.Add("wait", "true")
+	params.Add("recursive", "true")
+	keyUrl.RawQuery = params.Encode()
 
 	go func() {
 		for {
 			tick := report.Tick()
-			nodes, err := doEtcdRequest(keyUrl)
+			resp, err := doEtcdRequest(keyUrl)
 			report.Tock(tick, "etcd.response", report.Data{
-				"url":   keyUrl,
-				"nodes": len(nodes),
+				"url": keyUrl,
 			})
 			if err != nil {
 				report.Action("etcd.response.error", report.Data{
@@ -37,49 +54,36 @@ func longPollForJson(keyUrl string) chan etcdNode {
 				continue
 			}
 
-			for _, nd := range nodes {
-				watchC <- nd
-			}
+			watchC <- resp
 			time.Sleep(time.Duration(5 * time.Second))
 		}
 	}()
 
-	return watchC
+	return watchC, nil
 }
 
-func doEtcdRequest(keyUrl string) ([]etcdNode, error) {
+func doEtcdRequest(keyUrl *url.URL) (etcdResp, error) {
+	var msg etcdResp
 	client := http.Client{
 		Timeout: time.Duration(30 * time.Second),
 	}
 
-	resp, err := client.Get(keyUrl)
+	resp, err := client.Get(keyUrl.String())
 	if err != nil {
-		return nil, err
+		return msg, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("etcd status code %d", resp.StatusCode)
+		return msg, fmt.Errorf("etcd status code %d", resp.StatusCode)
 	}
-
-	/*
-		dump, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(dump))
-	*/
 
 	decoder := json.NewDecoder(resp.Body)
 	defer resp.Body.Close()
-	var msg struct {
-		ErrorCode int
-		Message   string
-		Node      struct {
-			Nodes []etcdNode
-		}
-	}
 	if err = decoder.Decode(&msg); err != nil {
-		return nil, err
+		return msg, err
 	}
-	if msg.ErrorCode != 0 {
-		return nil, fmt.Errorf("etcd error %d %s", msg.ErrorCode, msg.Message)
+	if msg.ErrCode != 0 {
+		return msg, fmt.Errorf("etcd error %d %s", msg.ErrCode, msg.ErrMsg)
 	}
 
-	return msg.Node.Nodes, nil
+	return msg, nil
 }
