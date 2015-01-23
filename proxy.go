@@ -38,6 +38,6 @@ func main() {
 	report.Info("proxy.start", report.Data{"port": 8000})
 	err = http.ListenAndServe(":8000", nil)
 	if err != nil {
-		report.Action("proxy.startup.fail", report.Data{"error": err.Error()})
+		report.Action("proxy.start.fail", report.Data{"error": err.Error()})
 	}
 }
