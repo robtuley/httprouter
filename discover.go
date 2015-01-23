@@ -4,8 +4,7 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/robtuley/proxy/etcd"
-	"github.com/robtuley/report"
+	"github.com/robtuley/etcdwatch"
 )
 
 type Route struct {
@@ -25,17 +24,17 @@ func init() {
 func discoverRoutesFromEtcD() chan Route {
 	routeC := make(chan Route)
 
-	respC, reportC := etcd.Watch("/hosts")
+	changeC, errorC := etcdwatch.Key("/hosts")
 
 	go func() {
 		for {
-			log.Println(<-respC)
+			log.Println(<-changeC)
 		}
 	}()
 
 	go func() {
 		for {
-			report.Action("etcd.response", <-reportC)
+			log.Println(<-errorC)
 		}
 	}()
 
