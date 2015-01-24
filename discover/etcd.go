@@ -1,7 +1,8 @@
-package main
+// Package discover enables discovery and tracking of traffic routing
+// rules from etcd
+package discover
 
 import (
-	"log"
 	"net/url"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/robtuley/report"
 )
 
+// Route summarises a desired HTTP traffic flow
 type Route struct {
 	Domain string
 	URL    *url.URL
@@ -23,17 +25,12 @@ func (r *Route) Close() {
 	close(r.C)
 }
 
-func init() {
-	routeC := discoverRoutes("/domains")
-
-	go func() {
-		for {
-			log.Println(<-routeC)
-		}
-	}()
-}
-
-func discoverRoutes(etcdKey string) chan Route {
+// Discovers routes from an etcd directory when in the form:
+//
+//   key:   /domains/demo.example.com/<name>
+//   value: http://internal.host:8000
+//
+func Etcd(etcdKey string) chan Route {
 	routeC := make(chan Route)
 	changeC, errorC := etcdwatch.Key(etcdKey)
 

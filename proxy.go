@@ -5,12 +5,20 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/robtuley/proxy/discover"
 	"github.com/robtuley/report"
 )
 
 func main() {
 	defer report.Drain()
 	report.StdOut()
+
+	routeC := discover.Etcd("/domains")
+	go func() {
+		for {
+			<-routeC
+		}
+	}()
 
 	url_a, err := url.Parse("http://localhost:8001")
 	if err != nil {
