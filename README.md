@@ -1,6 +1,7 @@
 Host-based HTTP Request Router Configured via Etcd
 ==================================================
 
+todo -- waitIndex for etcd, handle channel closures in etcd changes.
 
 Discovery
 ---------
