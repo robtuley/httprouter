@@ -2,34 +2,78 @@ package proxy
 
 import (
 	"net/http"
+	"net/http/httputil"
+	"sync"
+
+	"github.com/robtuley/httprouter/discover"
+	"github.com/robtuley/report"
 )
 
-var proxy roundRobin
+var domainMap struct {
+	mu    sync.RWMutex
+	proxy map[string]*roundRobin
+}
 
 func init() {
-	proxy = newRoundRobin(unavailableHandler())
-
-	a := http.HandlerFunc(serveA)
-	b := http.HandlerFunc(serveB)
-	c := http.HandlerFunc(serveC)
-
-	proxy.Add(&a)
-	proxy.Add(&b)
-	proxy.Add(&c)
+	domainMap.proxy = map[string]*roundRobin{}
+	go discoveryToProxyDomainMap()
 }
 
 func Domain(domain string) http.Handler {
-	return proxy.Choose()
+	domainMap.mu.RLock()
+	defer domainMap.mu.RUnlock()
+
+	p, exists := domainMap.proxy[domain]
+	if !exists {
+		report.Info("proxy.miss", report.Data{"domain": domain})
+		return unavailableHandler()
+	}
+	return p.Choose()
 }
 
-func serveA(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("A"))
+func discoveryToProxyDomainMap() {
+	routeC := discover.Etcd("/domains")
+
+	for {
+		route, more := <-routeC
+		if !more {
+			report.Info("proxy.route.closed", report.Data{})
+			return
+		}
+		addRoute(route)
+	}
 }
 
-func serveB(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("B"))
-}
+func addRoute(route discover.Route) {
+	domainMap.mu.Lock()
+	defer domainMap.mu.Unlock()
 
-func serveC(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("C"))
+	rrPointer, exists := domainMap.proxy[route.Domain]
+	if !exists {
+		rr := newRoundRobin(unavailableHandler())
+		rrPointer = &rr
+		domainMap.proxy[route.Domain] = rrPointer
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(route.URL)
+	rrPointer.Add(proxy)
+	report.Info("proxy.route.add", report.Data{
+		"domain": route.Domain,
+		"url":    route.URL.String(),
+	})
+
+	// handle signal channel
+	go func() {
+		for {
+			_, more := <-route.C
+			if !more {
+				rrPointer.Remove(proxy)
+				report.Info("proxy.route.remove", report.Data{
+					"domain": route.Domain,
+					"url":    route.URL.String(),
+				})
+				return
+			}
+		}
+	}()
 }

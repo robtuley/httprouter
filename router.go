@@ -20,20 +20,20 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tick := report.Tick()
 
-		proxy.Domain(r.URL.Host).ServeHTTP(w, r)
+		proxy.Domain(r.Host).ServeHTTP(w, r)
 
 		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-		report.Tock(tick, "request.proxied", report.Data{
-			"host": r.URL.Host,
+		report.Tock(tick, "router.request", report.Data{
+			"host": r.Host,
 			"path": r.URL.Path,
 			"ua":   r.UserAgent(),
 			"ip":   ip,
 		})
 	})
 
-	report.Info("router.starting", report.Data{"port": port})
+	report.Info("router.start", report.Data{"port": port})
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
-		report.Action("router.start.fail", report.Data{"error": err.Error()})
+		report.Action("router.error", report.Data{"error": err.Error()})
 	}
 }

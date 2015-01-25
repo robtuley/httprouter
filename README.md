@@ -1,14 +1,21 @@
 Host-based HTTP Request Router Configured via Etcd
 ==================================================
 
-todo -- waitIndex for etcd, handle channel closures in etcd changes.
+TODO
+----
+
++ waitIndex for etcd
++ handle channel closures in etcd Changes
++ test in-flight addition/removal
++ bombproof demo script
++ godoc
 
 Discovery
 ---------
 
 Routes are discovered from etcd from its [http API](https://coreos.com/docs/distributed-configuration/etcd-api/).
 
-## Bootstrapping Current State
+## Bootstrapping Current State 
 
 {"action":"get","node":{"key":"/hosts","dir":true,"nodes":[{"key":"/hosts/a.example.com","dir":true,"nodes":[{"key":"/hosts/a.example.com/127.0.0.1:8002","value":"127.0.0.1:8002","expiration":"2015-01-23T12:39:11.102727157Z","ttl":151,"modifiedIndex":6,"createdIndex":6}],"modifiedIndex":3,"createdIndex":3}],"modifiedIndex":3,"createdIndex":3}}
 
