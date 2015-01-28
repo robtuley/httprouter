@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"net"
 	"net/http"
 	"strconv"
@@ -14,8 +15,12 @@ const (
 )
 
 func main() {
+	var log string
+	flag.StringVar(&log, "log", "./router.log", "logfile path")
+	flag.Parse()
+
 	defer report.Drain()
-	report.StdOut()
+	report.File(log)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tick := report.Tick()
