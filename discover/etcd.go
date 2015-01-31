@@ -86,7 +86,7 @@ func Etcd(etcdKey string) chan Route {
 					existingRoute.Close()
 					domainMap[k] = newRoute
 					routeC <- newRoute
-					report.Info("route.change", report.Data{
+					report.Info("route.changed", report.Data{
 						"domain":  newRoute.Domain,
 						"url":     newRoute.URL.String(),
 						"prevUrl": existingRoute.URL.String(),

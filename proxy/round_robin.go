@@ -45,11 +45,21 @@ func (rr *roundRobin) Remove(h http.Handler) {
 	rr.mu.Lock()
 	defer rr.mu.Unlock()
 
+	if rr.ring == nil {
+		return
+	}
+
+	if rr.ring.Len() == 1 {
+		if h == rr.ring.Value {
+			rr.ring = ring.New(0)
+		}
+		return
+	}
+
 	for i := rr.ring.Len(); i > 0; i-- {
-		r := rr.ring.Next()
-		candidate := r.Value.(http.Handler)
-		if h == candidate {
-			rr.ring = r.Unlink(1)
+		rr.ring = rr.ring.Next()
+		if h == rr.ring.Value {
+			rr.ring = rr.ring.Unlink(1)
 			return
 		}
 	}
