@@ -57,24 +57,52 @@ sleep 2
 # test init
 
 printf "\nRunning tests "
+
 typeset -i NPASS=0
 typeset -i NFAIL=0
-function try { 
-  this="$1"; 
+
+function try {
+  TEST_OUTPUT="" 
+  TEST_NAME="$1"; 
 }
 
-function assert {
-  [ "$1" = "$2" ] && { printf "."; let NPASS+=1; return; }
+function assertOutputIs {
+  [ "$1" = "$TEST_OUTPUT" ] && { printf "."; let NPASS+=1; return; }
   let NFAIL+=1
-  printf "\nFAIL: $this\n'$1' != '$2'\n"
+  printf "\nFAIL: $TEST_NAME\n'$1' != '$TEST_OUTPUT'\n"
+}
+
+function httpStatusCodeForDomain {
+  TEST_OUTPUT=$TEST_OUTPUT$(curl -s -w "%{http_code}" -o /dev/null --resolve "$1:8080:127.0.0.1" http://$1:8080/)
+}
+
+function makeRequestToDomain {
+  TEST_OUTPUT=$TEST_OUTPUT$(curl -s --resolve "$1:8080:127.0.0.1" http://$1:8080/)
 }
 
 # tests
 
 try "None routable host gets a 503 response"
  
-out=$(curl -s -w "%{http_code}" -o /dev/null --resolve 'b.example.com:8080:127.0.0.1' http://b.example.com:8080/)
-assert "503" "$out"
+httpStatusCodeForDomain "b.example.com"
+assertOutputIs "503"
+
+try "Router host with 2 backends round robins between hosts"
+
+for i in `seq 4`
+  do makeRequestToDomain "a.example.com"
+done
+assertOutputIs "A1A0A1A0"
+
+try "When etcd key deleted, backend removed from round robin pool"
+
+etcdctl rm /domains/a.example.com:8080/A0 http://127.0.0.1:8001
+sleep 2
+
+for i in `seq 4`
+  do makeRequestToDomain "a.example.com"
+done
+assertOutputIs "A1A1A1A1"
 
 # kill processes
 
