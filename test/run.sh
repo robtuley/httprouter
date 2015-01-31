@@ -80,29 +80,35 @@ function makeRequestToDomain {
   TEST_OUTPUT=$TEST_OUTPUT$(curl -s --resolve "$1:8080:127.0.0.1" http://$1:8080/)
 }
 
+function repeat {
+  number=$1
+  shift
+  for i in `seq $number`; do
+    $@
+  done
+}
+
 # tests
 
-try "None routable host gets a 503 response"
+try "Non routable host gets a 503 response"
  
 httpStatusCodeForDomain "b.example.com"
 assertOutputIs "503"
 
 try "Router host with 2 backends round robins between hosts"
 
-for i in `seq 4`
-  do makeRequestToDomain "a.example.com"
-done
+repeat 4 makeRequestToDomain "a.example.com"
 assertOutputIs "A1A0A1A0"
 
 try "When etcd key deleted, backend removed from round robin pool"
 
-etcdctl rm /domains/a.example.com:8080/A0 http://127.0.0.1:8001
+etcdctl rm /domains/a.example.com:8080/A0 http://127.0.0.1:8001 > /dev/null
 sleep 2
 
-for i in `seq 4`
-  do makeRequestToDomain "a.example.com"
-done
+repeat 4 makeRequestToDomain "a.example.com"
 assertOutputIs "A1A1A1A1"
+
+
 
 # kill processes
 
