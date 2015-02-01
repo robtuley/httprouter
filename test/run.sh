@@ -116,7 +116,7 @@ assertOutputIs "A1A1A1A1"
 
 try "Etcd key update changes backend route"
 
-etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8001 --ttl 12 > /dev/null
+etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8001 --ttl 5 > /dev/null
 sleep 2
 
 repeat 4 makeRequestToDomain "a.example.com"
@@ -124,9 +124,9 @@ assertOutputIs "A0A0A0A0"
 
 try "Etcd key expiry removed route"
 
-#sleep 10
-#httpStatusCodeForDomain "a.example.com"
-#assertOutputIs "503"
+sleep 7
+httpStatusCodeForDomain "a.example.com"
+assertOutputIs "503"
 
 # kill processes
 
