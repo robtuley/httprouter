@@ -1,33 +1,48 @@
 Host-based HTTP Request Router Configured via Etcd
 ==================================================
 
-TODO
-----
-
-+ waitIndex for etcd
 + handle channel closures in etcd Changes
-+ test in-flight addition/removal
-+ bombproof demo script
++ log to file or splunk storm
 + godoc
 
 Discovery
 ---------
 
-Routes are discovered from etcd from its [http API](https://coreos.com/docs/distributed-configuration/etcd-api/).
+Routes are discovered from etcd from its [http API](https://coreos.com/docs/distributed-configuration/etcd-api/) via the [etcdwatch package](https://github.com/robtuley/etcdwatch). To add the internal URL `http://internal.host:8000` for the `demo.example.com`:
 
-## Bootstrapping Current State 
+    etcdctl set /domains/demo.example.com/myRouteName http://internal.host:8000
 
-{"action":"get","node":{"key":"/hosts","dir":true,"nodes":[{"key":"/hosts/a.example.com","dir":true,"nodes":[{"key":"/hosts/a.example.com/127.0.0.1:8002","value":"127.0.0.1:8002","expiration":"2015-01-23T12:39:11.102727157Z","ttl":151,"modifiedIndex":6,"createdIndex":6}],"modifiedIndex":3,"createdIndex":3}],"modifiedIndex":3,"createdIndex":3}}
+The appliaction will respect any routes in keys `/domains/<domain.name>/<route.name>` which contain routable internal URLs.
 
-## Listening for Changes
+Proxy
+-----
 
-{"action":"set","node":{"key":"/hosts/a.example.com/127.0.0.1:8003","value":"127.0.0.1:8003","expiration":"2015-01-23T12:31:23.273412205Z","ttl":10,"modifiedIndex":8,"createdIndex":8},"prevNode":{"key":"/hosts/a.example.com/127.0.0.1:8003","value":"127.0.0.1:8003","expiration":"2015-01-23T12:41:11.250241165Z","ttl":598,"modifiedIndex":7,"createdIndex":7}}
+HTTP requests are reverse proxied to any available domain routes via the `Host` header. If multiple routes are available, requests are round robin load balanced betwen them. If no route is available for a domain a 503 request will be served.
 
-{"action":"expire","node":{"key":"/hosts/a.example.com/127.0.0.1:8003","modifiedIndex":9,"createdIndex":8},"prevNode":{"key":"/hosts/a.example.com/127.0.0.1:8003","value":"127.0.0.1:8003","expiration":"2015-01-23T12:31:23.273412205Z","modifiedIndex":8,"createdIndex":8}}
+Example Discovery Script
+------------------------
 
-{"action":"delete","node":{"key":"/hosts/a.example.com/127.0.0.1:8001","modifiedIndex":10,"createdIndex":5},"prevNode":{"key":"/hosts/a.example.com/127.0.0.1:8001","value":"127.0.0.1:8001","expiration":"2015-01-23T12:37:21.590004293Z","ttl":329,"modifiedIndex":5,"createdIndex":5}}
+An example discovery bash script to perform a basic polling discovery of a health check URL and poppulation of the route into etcd is:
 
-
-
-
-
+    #!/bin/sh
+    if [ "$#" -ne 3 ]; then
+      echo "Usage: $0 <domain> <ip> <port>" >&2
+      exit 1
+    fi
+    
+    domain=$1
+    ip=$2
+    port=$3
+    printf "domain:> %s ip:> %s port:> %s" $domain $ip $port
+    
+    while true; do
+      curl --max-time 4 --connect-timeout 1 -A discovery-health-check -f http://$ip:$port/health-check
+      if [ $? -eq 0 ]; then
+        etcdctl set /domains/$domain/$ip:$port http://$ip:$port --ttl 10
+	    printf "ok:> %s at %s" $domain $ip:$port
+      else
+        etcdctl rm /domains/$domain/$ip:$port
+	    printf "error:> %s at %s" $domain $ip:$port
+      fi
+      sleep 5
+    done 
