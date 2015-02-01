@@ -109,7 +109,7 @@ assertOutputContains "A0A1A0A1"
 try "When etcd key deleted, backend removed from round robin pool"
 
 etcdctl rm /domains/a.example.com:8080/A0 > /dev/null
-sleep 2
+sleep 1
 
 repeat 4 makeRequestToDomain "a.example.com"
 assertOutputIs "A1A1A1A1"
@@ -117,16 +117,30 @@ assertOutputIs "A1A1A1A1"
 try "Etcd key update changes backend route"
 
 etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8001 --ttl 5 > /dev/null
-sleep 2
+sleep 1
 
 repeat 4 makeRequestToDomain "a.example.com"
 assertOutputIs "A0A0A0A0"
 
 try "Etcd key expiry removed route"
 
-sleep 7
+sleep 5
 httpStatusCodeForDomain "a.example.com"
 assertOutputIs "503"
+
+try "Rapid succession of etcd key changes"
+
+etcdctl set /domains/a.example.com:8080/A0 http://127.0.0.1:8001 > /dev/null
+etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 > /dev/null
+etcdctl set /domains/b.example.com:8080/B0 http://127.0.0.1:8003 > /dev/null
+etcdctl set /domains/b.example.com:8080/B1 http://127.0.0.1:8004 > /dev/null
+sleep 4
+
+repeat 5 makeRequestToDomain "a.example.com"
+repeat 5 makeRequestToDomain "b.example.com"
+
+assertOutputContains "A0A1A0A1"
+assertOutputContains "B0B1B0B1"
 
 # kill processes
 
