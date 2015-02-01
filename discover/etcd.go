@@ -43,7 +43,10 @@ func Etcd(etcdKey string) chan Route {
 
 	nextChange:
 		for {
-			change := <-changeC
+			change, more := <-changeC
+			if !more {
+				panic("etcdwatch closed channel on " + etcdKey)
+			}
 			report.Info("etcd.change", report.Data{
 				"key":    change.Key,
 				"value":  change.Value,

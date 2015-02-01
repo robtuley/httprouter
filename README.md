@@ -1,7 +1,6 @@
 Host-based HTTP Request Router Configured via Etcd
 ==================================================
 
-+ handle channel closures in etcd Changes
 + log to file or splunk storm
 + godoc
 
