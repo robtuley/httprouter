@@ -128,19 +128,23 @@ sleep 5
 httpStatusCodeForDomain "a.example.com"
 assertOutputIs "503"
 
-try "Rapid succession of etcd key changes"
+for i in `seq 3`; do
 
-etcdctl set /domains/a.example.com:8080/A0 http://127.0.0.1:8001 > /dev/null
-etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 > /dev/null
-etcdctl set /domains/b.example.com:8080/B0 http://127.0.0.1:8003 > /dev/null
-etcdctl set /domains/b.example.com:8080/B1 http://127.0.0.1:8004 > /dev/null
-sleep 4
+  try "Rapid succession of etcd key changes renewing TTL leases #$i"
 
-repeat 5 makeRequestToDomain "a.example.com"
-repeat 5 makeRequestToDomain "b.example.com"
+  etcdctl set /domains/a.example.com:8080/A0 http://127.0.0.1:8001 --ttl 10 > /dev/null
+  etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 --ttl 10 > /dev/null
+  etcdctl set /domains/b.example.com:8080/B0 http://127.0.0.1:8003 --ttl 10 > /dev/null
+  etcdctl set /domains/b.example.com:8080/B1 http://127.0.0.1:8004 --ttl 10 > /dev/null
+  sleep 4
 
-assertOutputContains "A0A1A0A1"
-assertOutputContains "B0B1B0B1"
+  repeat 5 makeRequestToDomain "a.example.com"
+  repeat 5 makeRequestToDomain "b.example.com"
+
+  assertOutputContains "A0A1A0A1"
+  assertOutputContains "B0B1B0B1"
+
+done
 
 # kill processes
 

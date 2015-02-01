@@ -82,7 +82,7 @@ func Etcd(etcdKey string) chan Route {
 				}
 
 				// route already exists, but changed: close and open new
-				if isset && existingRoute.URL != newRoute.URL {
+				if isset && existingRoute.URL.String() != newRoute.URL.String() {
 					existingRoute.Close()
 					domainMap[k] = newRoute
 					routeC <- newRoute
