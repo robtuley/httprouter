@@ -1,9 +1,6 @@
 Host-based HTTP Request Router Configured via Etcd
 ==================================================
 
-+ log to file or splunk storm
-+ godoc
-
 Discovery
 ---------
 
