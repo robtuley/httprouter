@@ -50,7 +50,7 @@ etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 > /dev/null
 # start router
 
 printf "Starting router (logging to %s)" $LOGFILE
-./router --log=$LOGFILE &
+./router --logfile=$LOGFILE &
 PIDS+=($!)
 sleep 2 
 

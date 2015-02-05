@@ -15,12 +15,8 @@ const (
 )
 
 func main() {
-	var log string
-	flag.StringVar(&log, "log", "./router.log", "logfile path")
-	flag.Parse()
-
 	defer report.Drain()
-	report.File(log)
+	parseFlagsToDetermineLogOutput()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tick := report.Tick()
@@ -40,5 +36,21 @@ func main() {
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
 		report.Action("router.error", report.Data{"error": err.Error()})
+	}
+}
+
+func parseFlagsToDetermineLogOutput() {
+	var logfile, logurl string
+	flag.StringVar(&logfile, "logfile", "", "log file path e.g. /var/log/xxx.log")
+	flag.StringVar(&logurl, "logurl", "", "log URL where data is POSTed to")
+	flag.Parse()
+
+	switch {
+	case len(logfile) > 0:
+		report.File(logfile)
+	case len(logurl) > 0:
+		report.BatchPostToUrl(logurl)
+	default:
+		report.StdOut()
 	}
 }
