@@ -1,6 +1,8 @@
 Host-based HTTP Request Router Configured via Etcd
 ==================================================
 
+[![Docker Repository on Quay.io](https://quay.io/repository/robtuley/httprouter/status "Docker Repository on Quay.io")](https://quay.io/repository/robtuley/httprouter)
+
 Discovery
 ---------
 
