@@ -3,6 +3,18 @@ Host-based HTTP Request Router Configured via Etcd
 
 [![Docker Repository on Quay.io](https://quay.io/repository/robtuley/httprouter/status "Docker Repository on Quay.io")](https://quay.io/repository/robtuley/httprouter)
 
+Configuring the Router
+----------------------
+
+The following command line arguments are available:
+
+    -- logfile <filepath>  log to specified file
+    -- logurl <url>        POST log in batches to specified URL (e.g. Loggly bulk input)
+    -- etcdurl <url>       etcd URL, defaults to http://127.0.0.1:4001
+    -- etcdkey <key>       etcd key to discover routes from, defaults to /domains
+
+If no alternative log file/url is specified, the application will log to stdout. All logs are in JSON format.
+
 Discovery
 ---------
 
@@ -10,7 +22,7 @@ Routes are discovered from etcd from its [http API](https://coreos.com/docs/dist
 
     etcdctl set /domains/demo.example.com/myRouteName http://internal.host:8000
 
-The appliaction will respect any routes in keys `/domains/<domain.name>/<route.name>` which contain routable internal URLs.
+The application will respect any routes in keys `/domains/<domain.name>/<route.name>` which contain routable internal URLs.
 
 Proxy
 -----
@@ -34,7 +46,7 @@ An example discovery bash script to perform a basic polling discovery of a healt
     printf "domain:> %s ip:> %s port:> %s" $domain $ip $port
     
     while true; do
-      curl --max-time 4 --connect-timeout 1 -A discovery-health-check -f http://$ip:$port/health-check
+      curl -s --max-time 4 --connect-timeout 1 -A discovery-health-check -f http://$ip:$port/health-check > /dev/null
       if [ $? -eq 0 ]; then
         etcdctl set /domains/$domain/$ip:$port http://$ip:$port --ttl 10
 	    printf "ok:> %s at %s" $domain $ip:$port

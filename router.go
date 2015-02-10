@@ -16,8 +16,16 @@ const (
 
 func main() {
 	defer report.Drain()
-	parseFlagsToDetermineLogOutput()
-	proxy.Listen("http://127.0.0.1:4001", "/domains")
+
+	var logfile, logurl, etcdurl, etcdkey string
+	flag.StringVar(&logfile, "logfile", "", "log file path e.g. /var/log/xxx.log")
+	flag.StringVar(&logurl, "logurl", "", "log URL where data is POSTed to")
+	flag.StringVar(&etcdurl, "etcdurl", "http://127.0.0.1:4001", "Etcd URL")
+	flag.StringVar(&etcdkey, "etcdkey", "/domains", "etcd key to discovery routes from")
+	flag.Parse()
+
+	initLogOutput(logfile, logurl)
+	proxy.Listen(etcdurl, etcdkey)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tick := report.Tick()
@@ -40,12 +48,7 @@ func main() {
 	}
 }
 
-func parseFlagsToDetermineLogOutput() {
-	var logfile, logurl string
-	flag.StringVar(&logfile, "logfile", "", "log file path e.g. /var/log/xxx.log")
-	flag.StringVar(&logurl, "logurl", "", "log URL where data is POSTed to")
-	flag.Parse()
-
+func initLogOutput(logfile string, logurl string) {
 	switch {
 	case len(logfile) > 0:
 		report.File(logfile)
