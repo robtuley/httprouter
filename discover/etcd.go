@@ -30,9 +30,15 @@ func (r *Route) Close() {
 //   key:   /domains/demo.example.com/<name>
 //   value: http://internal.host:8000
 //
-func Etcd(etcdKey string) chan Route {
+func Etcd(etcdUrl string, etcdKey string) chan Route {
 	routeC := make(chan Route)
-	changeC, errorC := etcdwatch.Key(etcdKey)
+	etcdKeyUrl := etcdUrl + "/v2/keys/" + etcdKey
+	changeC, errorC := etcdwatch.Url(etcdKeyUrl)
+
+	report.Info("etcd.listen", report.Data{
+		"url": etcdUrl,
+		"key": etcdKey,
+	})
 
 	go func() {
 		// domainMap[domainKey{"example.com" "localhost:8000"}] == Route
@@ -45,7 +51,7 @@ func Etcd(etcdKey string) chan Route {
 		for {
 			change, more := <-changeC
 			if !more {
-				panic("etcdwatch closed channel on " + etcdKey)
+				panic("etcdwatch closed channel on " + etcdKeyUrl)
 			}
 			report.Info("etcd.change", report.Data{
 				"key":    change.Key,

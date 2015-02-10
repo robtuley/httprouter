@@ -16,7 +16,11 @@ var domainMap struct {
 
 func init() {
 	domainMap.proxy = map[string]*roundRobin{}
-	go discoveryToProxyDomainMap()
+}
+
+// start listening to a particular etcd key
+func Listen(etcdUrl string, etcdKey string) {
+	go discoveryToProxyDomainMap(etcdUrl, etcdKey)
 }
 
 func Domain(domain string) http.Handler {
@@ -31,8 +35,8 @@ func Domain(domain string) http.Handler {
 	return p.Choose()
 }
 
-func discoveryToProxyDomainMap() {
-	routeC := discover.Etcd("/domains")
+func discoveryToProxyDomainMap(etcdUrl string, etcdKey string) {
+	routeC := discover.Etcd(etcdUrl, etcdKey)
 
 	for {
 		route, more := <-routeC

@@ -17,6 +17,7 @@ const (
 func main() {
 	defer report.Drain()
 	parseFlagsToDetermineLogOutput()
+	proxy.Listen("http://127.0.0.1:4001", "/domains")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tick := report.Tick()
