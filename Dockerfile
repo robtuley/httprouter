@@ -8,6 +8,6 @@ RUN go get github.com/robtuley/etcdwatch
 
 RUN go install github.com/robtuley/httprouter
 
-ENTRYPOINT /go/bin/httprouter
+ENTRYPOINT ["/go/bin/httprouter"]
 
 EXPOSE 8080
