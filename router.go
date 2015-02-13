@@ -16,6 +16,7 @@ const (
 
 func main() {
 	defer report.Drain()
+	report.Global(report.Data{"service": "httprouter"})
 
 	var logfile, logurl, etcdurl, etcdkey string
 	flag.StringVar(&logfile, "logfile", "", "log file path e.g. /var/log/xxx.log")
