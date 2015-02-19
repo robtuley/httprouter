@@ -83,7 +83,7 @@ function httpStatusCodeForDomain {
 }
 
 function makeRequestToDomain {
-  TEST_OUTPUT=$TEST_OUTPUT$(curl -s --resolve "$1:8080:127.0.0.1" http://$1:8080/)
+  TEST_OUTPUT=$TEST_OUTPUT$(curl -s --resolve "$1:8080:127.0.0.1" http://$1:8080/$2)
 }
 
 function repeat {
@@ -105,6 +105,12 @@ try "Router host with 2 backends round robins between hosts"
 
 repeat 5 makeRequestToDomain "a.example.com"
 assertOutputContains "A0A1A0A1"
+
+try "Proxied requests have X-Forwarded-For and user-agent passthru"
+
+makeRequestToDomain "a.example.com" "dump"
+assertOutputContains "X-Forwarded-For"
+assertOutputContains "User-Agent: curl"
 
 try "When etcd key deleted, backend removed from round robin pool"
 
