@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"io"
-	"log"
 	"net/http"
-	"strconv"
 	"strings"
+
+	"github.com/robtuley/httpserver"
 )
 
 func main() {
@@ -16,7 +16,12 @@ func main() {
 	flag.IntVar(&port, "port", 8001, "port to run on")
 	flag.Parse()
 
-	http.HandleFunc("/dump", func(res http.ResponseWriter, req *http.Request) {
+	service, err := httpserver.New(port)
+	if err != nil {
+		panic(err)
+	}
+
+	service.HandleFunc("/dump", func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		io.WriteString(res, "HEADERS:")
 		for k, v := range req.Header {
@@ -24,10 +29,11 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+	service.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		io.WriteString(res, label)
 	})
 
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), nil))
+	service.Start()
+	service.WaitStop()
 }

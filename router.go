@@ -4,14 +4,14 @@ import (
 	"flag"
 	"net"
 	"net/http"
-	"strconv"
 
 	"github.com/robtuley/httprouter/proxy"
+	"github.com/robtuley/httpserver"
 	"github.com/robtuley/report"
 )
 
 const (
-	port = 8080
+	PORT = 8080
 )
 
 func main() {
@@ -28,7 +28,14 @@ func main() {
 	initLogOutput(logfile, logurl)
 	proxy.Listen(etcdurl, etcdkey)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	report.Info("service.start", report.Data{"port": PORT})
+	service, err := httpserver.New(PORT)
+	if err != nil {
+		report.Action("service.start.error", report.Data{"error": err.Error()})
+		return
+	}
+
+	service.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tick := report.Tick()
 
 		proxy.Domain(r.Host).ServeHTTP(w, r)
@@ -42,10 +49,12 @@ func main() {
 		})
 	})
 
-	report.Info("router.start", report.Data{"port": port})
-	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
-	if err != nil {
-		report.Action("router.error", report.Data{"error": err.Error()})
+	service.Start()
+
+	sig := service.WaitStop()
+	report.Info("service.stopped", report.Data{"port": PORT, "signal": sig})
+	if err = service.Err(); err != nil {
+		report.Action("service.error", report.Data{"error": err.Error()})
 	}
 }
 
