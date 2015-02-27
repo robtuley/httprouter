@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/robtuley/httprouter/proxy"
 	"github.com/robtuley/httpserver"
@@ -17,6 +18,7 @@ const (
 func main() {
 	defer report.Drain()
 	report.Global(report.Data{"service": "httprouter"})
+	report.RuntimeStatsEvery(30 * time.Second)
 
 	var logfile, logurl, etcdurl, etcdkey string
 	flag.StringVar(&logfile, "logfile", "", "log file path e.g. /var/log/xxx.log")
