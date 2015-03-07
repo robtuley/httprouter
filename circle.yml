@@ -1,9 +1,6 @@
 machine:
   services:
     - docker
-  post:
-    - $GOPATH/bin/etcd
-        background: true
 
 dependencies:
   pre:
@@ -11,6 +8,8 @@ dependencies:
     - go install github.com/coreos/etcd
     - go get github.com/coreos/etcdctl
     - go install github.com/coreos/etcdctl
+    - $GOPATH/bin/etcd:
+        background: true
   cache_directories:
     - "~/docker"
   override:
