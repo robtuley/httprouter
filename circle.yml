@@ -1,6 +1,9 @@
 machine:
   services:
     - docker
+  post:
+    - $GOPATH/bin/etcd
+        background: true
 
 dependencies:
   pre:
@@ -18,8 +21,6 @@ dependencies:
 
 test:
   override:
-    - $GOPATH/bin/etcd
-        background: true
 	- docker run -d -p 8080:8080 quay.io/robtuley/httprouter; sleep 10
     - ./test/run.sh
 
