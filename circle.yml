@@ -16,7 +16,7 @@ dependencies:
     - docker info
     - if [[ -e ~/docker/image.tar ]]; then docker load --input ~/docker/image.tar; fi
     - docker build -t quay.io/robtuley/httprouter .
-    - mkdir -p ~/docker; docker save quay.io/robtuley/com.textcaptcha > ~/docker/image.tar
+    - mkdir -p ~/docker; docker save quay.io/robtuley/httprouter > ~/docker/image.tar
 
 test:
   override:
