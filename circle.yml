@@ -1,0 +1,31 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  pre:
+    - go get github.com/coreos/etcd
+    - go install github.com/coreos/etcd
+    - go get github.com/coreos/etcdctl
+    - go install github.com/coreos/etcdctl
+    - $GOPATH/bin/etcd
+        background: true
+  cache_directories:
+    - "~/docker"
+  override:
+    - docker info
+    - if [[ -e ~/docker/image.tar ]]; then docker load --input ~/docker/image.tar; fi
+    - docker build -t quay.io/robtuley/httprouter .
+    - mkdir -p ~/docker; docker save quay.io/robtuley/com.textcaptcha > ~/docker/image.tar
+
+test:
+  override:
+	- docker run -d -p 8080:8080 quay.io/robtuley/httprouter; sleep 10
+    - ./test/run.sh
+
+deployment:
+  hub: 
+    branch: master
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PWD $DOCKER_URL
+      - docker push quay.io/robtuley/httprouter
