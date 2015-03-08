@@ -1,6 +1,6 @@
 # https://registry.hub.docker.com/_/golang/
 # debian image, GOPATH configured at /go.
-FROM golang
+FROM golang:latest
 
 ADD . /go/src/github.com/robtuley/httprouter
 RUN go get github.com/robtuley/report
