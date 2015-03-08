@@ -20,8 +20,8 @@ dependencies:
     - if [[ -e ~/docker/image.tar ]]; then docker load --input ~/docker/image.tar; fi
     - docker build -t quay.io/robtuley/httprouter .
     - mkdir -p ~/docker; docker save quay.io/robtuley/httprouter > ~/docker/image.tar
-    - ip a; hostname -I
-    - docker run -p 8080:8080 quay.io/robtuley/httprouter --etcdurl=http://$(hostname -I|awk '{print $1}'|tr -d ' \n'):4001:
+    - ip a; hostname -i
+    - docker run -p 8080:8080 quay.io/robtuley/httprouter --etcdurl=http://$(hostname -i|tr -d ' \n'):4001:
         background: true
     - sleep 10
 
