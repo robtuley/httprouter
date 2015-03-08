@@ -21,7 +21,7 @@ dependencies:
 test:
   override:
     - docker run -d -p 8080:8080 quay.io/robtuley/httprouter; sleep 10
-    - ./test/run.sh
+    - test/run.sh
 
 deployment:
   hub: 
