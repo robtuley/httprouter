@@ -17,10 +17,10 @@ cd $DIR
 
 # delete previous keys 
 
-$GOPATH/bin/etcdctl rm /domains/a.example.com:8080/A0 > /dev/null 2>&1
-$GOPATH/bin/etcdctl rm /domains/a.example.com:8080/A1 > /dev/null 2>&1
-$GOPATH/bin/etcdctl rm /domains/b.example.com:8080/B0 > /dev/null 2>&1
-$GOPATH/bin/etcdctl rm /domains/b.example.com:8080/B1 > /dev/null 2>&1
+etcdctl rm /domains/a.example.com:8080/A0 > /dev/null 2>&1
+etcdctl rm /domains/a.example.com:8080/A1 > /dev/null 2>&1
+etcdctl rm /domains/b.example.com:8080/B0 > /dev/null 2>&1
+etcdctl rm /domains/b.example.com:8080/B1 > /dev/null 2>&1
 
 # build webservers
 
@@ -41,8 +41,8 @@ startWebserver 8004 B1
 
 # add one route with 2 nodes
 
-$GOPATH/bin/etcdctl set /domains/a.example.com:8080/A0 http://127.0.0.1:8001 > /dev/null
-$GOPATH/bin/etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 > /dev/null
+etcdctl set /domains/a.example.com:8080/A0 http://127.0.0.1:8001 > /dev/null
+etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 > /dev/null
 sleep 2
 
 # test init
@@ -105,7 +105,7 @@ assertOutputContains "User-Agent: curl"
 
 try "When etcd key deleted, backend removed from round robin pool"
 
-$GOPATH/bin/etcdctl rm /domains/a.example.com:8080/A0 > /dev/null
+etcdctl rm /domains/a.example.com:8080/A0 > /dev/null
 sleep 1
 
 repeat 4 makeRequestToDomain "a.example.com"
@@ -113,7 +113,7 @@ assertOutputIs "A1A1A1A1"
 
 try "Etcd key update changes backend route"
 
-$GOPATH/bin/etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8001 --ttl 5 > /dev/null
+etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8001 --ttl 5 > /dev/null
 sleep 1
 
 repeat 4 makeRequestToDomain "a.example.com"
@@ -129,10 +129,10 @@ for i in `seq 3`; do
 
   try "Rapid succession of etcd key changes renewing TTL leases #$i"
 
-  $GOPATH/bin/etcdctl set /domains/a.example.com:8080/A0 http://127.0.0.1:8001 --ttl 10 > /dev/null
-  $GOPATH/bin/etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 --ttl 10 > /dev/null
-  $GOPATH/bin/etcdctl set /domains/b.example.com:8080/B0 http://127.0.0.1:8003 --ttl 10 > /dev/null
-  $GOPATH/bin/etcdctl set /domains/b.example.com:8080/B1 http://127.0.0.1:8004 --ttl 10 > /dev/null
+  etcdctl set /domains/a.example.com:8080/A0 http://127.0.0.1:8001 --ttl 10 > /dev/null
+  etcdctl set /domains/a.example.com:8080/A1 http://127.0.0.1:8002 --ttl 10 > /dev/null
+  etcdctl set /domains/b.example.com:8080/B0 http://127.0.0.1:8003 --ttl 10 > /dev/null
+  etcdctl set /domains/b.example.com:8080/B1 http://127.0.0.1:8004 --ttl 10 > /dev/null
   sleep 4
 
   repeat 5 makeRequestToDomain "a.example.com"

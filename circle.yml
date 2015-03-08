@@ -1,4 +1,7 @@
 machine:
+  environment:
+    # add all GOPATH bin to default path
+    PATH: $PATH:${GOPATH//://bin:}/bin
   services:
     - docker
 
@@ -8,7 +11,7 @@ dependencies:
     - go install github.com/coreos/etcd
     - go get github.com/coreos/etcdctl
     - go install github.com/coreos/etcdctl
-    - $GOPATH/bin/etcd:
+    - etcd:
         background: true
   cache_directories:
     - "~/docker"
