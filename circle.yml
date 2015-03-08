@@ -11,7 +11,7 @@ dependencies:
     - go install github.com/coreos/etcd
     - go get github.com/coreos/etcdctl
     - go install github.com/coreos/etcdctl
-    - etcd:
+    - etcd --data-dir=/tmp/httprouter.etcd:
         background: true
   cache_directories:
     - "~/docker"
