@@ -16,6 +16,8 @@ dependencies:
     - go get github.com/robtuley/report
     - go get github.com/robtuley/etcdwatch
     - go get github.com/robtuley/httpserver
+    - mkdir -p /usr/local/go/src/github.com/httprouter
+    - ln -s `pwd` /usr/local/go/src/github.com/robtuley/httprouter
     - CGO_ENABLED=0 go build -a -installsuffix nocgo .
   override:
     - docker build -t quay.io/robtuley/httprouter .
