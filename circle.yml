@@ -21,7 +21,7 @@ dependencies:
     - docker build -t quay.io/robtuley/httprouter .
     - mkdir -p ~/docker; docker save quay.io/robtuley/httprouter > ~/docker/image.tar
     - ip a; hostname -I; route -n
-    - docker run -p 8080:8080 quay.io/robtuley/httprouter --etcdurl=http://$(route -n|awk '/UG[ \t]/{print $2}'|tr -d ' \n'):4001:
+    - docker run --net=host quay.io/robtuley/httprouter --etcdurl=http://127.0.0.1:4001:
         background: true
     - sleep 10
 
