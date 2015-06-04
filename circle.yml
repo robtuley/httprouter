@@ -16,7 +16,7 @@ dependencies:
     - go get github.com/robtuley/report
     - go get github.com/robtuley/etcdwatch
     - go get github.com/robtuley/httpserver
-    - mkdir -p /usr/local/go/src/github.com/httprouter
+    - mkdir -p /usr/local/go/src/github.com/robtuley
     - ln -s `pwd` /usr/local/go/src/github.com/robtuley/httprouter
     - CGO_ENABLED=0 go build -a -installsuffix nocgo .
   override:
