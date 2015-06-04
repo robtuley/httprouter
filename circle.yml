@@ -13,13 +13,12 @@ dependencies:
     - go install github.com/coreos/etcdctl
     - etcd --data-dir=/tmp/httprouter.etcd:
         background: true
-  cache_directories:
-    - "~/docker"
+    - go get github.com/robtuley/report
+    - go get github.com/robtuley/etcdwatch
+    - go get github.com/robtuley/httpserver
+    - CGO_ENABLED=0 go build -a -installsuffix nocgo .
   override:
-    - docker info
-    - if [[ -e ~/docker/image.tar ]]; then docker load --input ~/docker/image.tar; fi
     - docker build -t quay.io/robtuley/httprouter .
-    - mkdir -p ~/docker; docker save quay.io/robtuley/httprouter > ~/docker/image.tar
     # note the --net==host: makes etcd accessible on localhost, app binds directly to host :8080 
     - docker run --net=host quay.io/robtuley/httprouter --etcdurl=http://127.0.0.1:4001:
         background: true
@@ -27,7 +26,6 @@ dependencies:
 
 test:
   override:
-    - go get github.com/robtuley/httpserver
     - test/run.sh
 
 deployment:
